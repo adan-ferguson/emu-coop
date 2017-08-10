@@ -47,17 +47,6 @@ if emu.emulating() then
 		local data = ircDialog()
 
 		if data then -- If user did not hit cancel
-			local failed = false
-
-			function scrub(invalid) errorMessage(invalid .. " not valid") failed = true end
-
-			if failed then -- NOTHING
-			elseif not nonempty(data.server) then scrub("Server")
-			elseif not nonzero(data.port) then scrub("Port")
-			elseif not nonempty(data.nick) then scrub("Nick")
-			elseif not nonempty(data.partner) then scrub("Partner nick")
-			end
-
 			function connect()
 				local socket = require "socket"
 				local server = socket.tcp()
@@ -70,10 +59,7 @@ if emu.emulating() then
 				mainDriver = GameDriver(spec, data.forceSend) -- Notice: This is a global, specs can use it
 				IrcPipe(data, mainDriver):wake(server)
 			end
-
-			if not failed then connect() end
-
-			if failed then gui.register(printMessage) end
+			connect()
 		end
 	end
 else

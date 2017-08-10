@@ -4,7 +4,36 @@ require "iuplua"
 local optionLetter = "o"
 if FCEU then optionLetter = "l" end
 
-function ircDialog()
+function ircDialog(data)
+
+	local function isInvalid(data)
+
+		local failed = false
+		local function scrub(invalid) errorMessage(invalid) failed = true end
+
+		if not nonempty(data.server) then scrub("Server not valid")
+		elseif not nonzero(data.port) then scrub("Port not valid")
+		elseif not nonempty(data.nick) then scrub("Nick not valid")
+		elseif not nonempty(data.partner) then scrub("Partner nick not valid")
+		elseif data.nick == data.partner then scrub("Nicknames can't be the same")
+		end
+
+		if failed then gui.register(printMessage) end
+		return failed
+	end
+
+	local function defaults()
+		return {
+			server="irc.speedrunslive.com",
+			port=6667,
+			nick="",
+			partner="",
+			forceSend=0
+		}
+	end
+
+	if data == nil then data = defaults() end
+
 	local res, server, port, nick, partner, forceSend = iup.GetParam("Connection settings", nil,
 	    "Enter an IRC server: %s\n" ..
 		"IRC server port: %i\n" ..
@@ -12,11 +41,14 @@ function ircDialog()
 		"Partner nick: %s\n" ..
 		"%t\n" .. -- <hr>
 		"Are you restarting\rafter a crash? %" .. optionLetter .. "|No|Yes|\n"
-	    ,"irc.speedrunslive.com", 6667, "", "", 0)
+	    , data.server, data.port, data.nick, data.partner, data.forceSend)
 
-	if 0 == res then return nil end
+	local newData = {server=server, port=port, nick=nick, partner=partner, forceSend=forceSend}
 
-	return {server=server, port=port, nick=nick, partner=partner, forceSend=forceSend==1}
+	if res == false then return nil end
+	if isInvalid(newData) == true then return ircDialog(newData) end
+
+	return {server=server, port=port, nick=nick, partner=partner, forceSend=forceSend==1 }
 end
 
 function selectDialog(specs, reason)
